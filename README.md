@@ -41,6 +41,10 @@ files from the Adafruit Circuit Python library bundle to the `lib/` directory.
 
 Copy the `code.py`, `boot.py`, and the `logging.json` file from this repo root directory on your MCU.
 
+The `boot.py` file is necessary in order to be able to write the `log.json` file. Setting the `storage.remount`
+`disable_concurrent_write_protection` to `True` is necessary for being able to write to the file while you have the MCU
+plugged in to your computer. This is critical for testing purposes.
+
 ## Authors
 
 * Tom Camp - _Initial work_ - [Tom-Camp](https://github.com/Tom-Camp)
