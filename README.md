@@ -35,9 +35,10 @@ Once you have flashed the MCU with the CircuitPython u2f file, it will show on y
 (`/media/[YOUR USER]/CircuitPy/` on Linux) and will include a `lib/` directory and a `code.py` file. Copy the following
 files from the Adafruit Circuit Python library bundle to the `lib/` directory.
 
+* [adafruit_ahtx0](https://docs.circuitpython.org/projects/ahtx0/en/latest/)
 * [adafruit_epd](https://github.com/adafruit/Adafruit_EPD)
+* adafruit_framebuf
 * [adafruit_sgp](https://docs.circuitpython.org/projects/sgp30/en/latest/)
-* [adafruit_aht0](https://docs.circuitpython.org/projects/ahtx0/en/latest/)
 
 Copy the `code.py`, `boot.py`, and the `logging.json` file from this repo root directory on your MCU.
 
