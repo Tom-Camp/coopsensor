@@ -20,33 +20,48 @@ relative_humidity = aht_sensor.relative_humidity
 humidity = round(relative_humidity)
 
 
-def check_mox(baseline: list) -> tuple:
-    """Do moxy stuff here"""
+def set_baseline(sgp: Adafruit_SGP30) -> tuple:
+    for _ in range(0, 15):
+        time.sleep(1)
+        print("eCO2 = %d ppm \t TVOC = %d ppb" % (sgp30.eCO2, sgp30.TVOC))
+    return sgp30.baseline_eCO2, sgp30.baseline_TVOC
 
 
 error: str = ""
 try:
-    with open("log.json", "r") as logfile:
-        log_data = json.load(logfile)
+    with open("log.json", "r") as log_file:
+        log_data = json.load(log_file)
 except OSError as e:
     error = f"ERROR: {e}"
 
 sgp30 = Adafruit_SGP30(i2c)
-sgp30.set_iaq_baseline(0x8973, 0x8AAE)
-sgp30.set_iaq_relative_humidity(temperature_celsius, relative_humidity)
-for x in range(0, 19):
-    eco2, tvoc = sgp30.baseline_eCO2, sgp30.baseline_TVOC
+eco2_baseline = log_data.get("mox_baseline").get("eco2")
+tvoc_baseline = log_data.get("mox_baseline").get("tvoc")
+if not eco2_baseline and not tvoc_baseline:
+    eco2_baseline, tvoc_baseline = set_baseline(sgp30)
 
-results: tuple = (temperature, humidity, eco2, tvoc)
+sgp30.set_iaq_baseline(eco2_baseline, tvoc_baseline)
+sgp30.set_iaq_relative_humidity(temperature_celsius, relative_humidity)
+
+results: tuple = (temperature, humidity)
 
 last_six = log_data.get("last_six")
 if len(last_six) >= 5:
     last_six = last_six[-4:]
 last_six.append(results)
 
+log_data = {
+    "last_six": last_six,
+    "mox_baseline": {
+        "eco2": eco2_baseline,
+        "tvoc": tvoc_baseline,
+        "count": 0,
+    },
+}
+
 try:
     with open("log.json", "w+") as outfile:
-        json.dump(last_six, outfile)
+        json.dump(log_data, outfile)
 except OSError as e:
     error = f"ERROR: {e}"
 
@@ -77,14 +92,16 @@ display.pixel(10, 100, Adafruit_EPD.BLACK)
 
 column_width = int(round(display.width, 0) / 3)
 
-display.text(f"Temp: {results[0]}F", 2, 5, Adafruit_EPD.BLACK)
-display.vline(column_width, 2, display.height - 12, Adafruit_EPD.BLACK)
-display.text(f"Humidity: {results[1]}%", column_width + 5, 5, Adafruit_EPD.BLACK)
-display.vline(column_width * 2, 2, display.height - 12, Adafruit_EPD.BLACK)
-display.text(f"vCO2: {results[2]} ppm", column_width * 2 + 5, 5, Adafruit_EPD.BLACK)
+display.text(f"Temp: {temperature}F", 2, 5, Adafruit_EPD.BLACK)
 display.text("Last hour", 2, 20, Adafruit_EPD.BLACK)
+display.vline(column_width, 2, display.height - 12, Adafruit_EPD.BLACK)
+display.text(
+    f"Humidity: {round(relative_humidity, 0)}%", column_width + 5, 5, Adafruit_EPD.BLACK
+)
 display.text("Last hour", column_width + 5, 20, Adafruit_EPD.BLACK)
-display.text(f"TVOC: {results[3]} ppb", column_width * 2 + 5, 20, Adafruit_EPD.BLACK)
+display.vline(column_width * 2, 2, display.height - 12, Adafruit_EPD.BLACK)
+display.text(f"eCO2: {sgp30.eCO2} ppm", column_width * 2 + 5, 5, Adafruit_EPD.BLACK)
+display.text(f"TVOC: {sgp30.TVOC} ppb", column_width * 2 + 5, 20, Adafruit_EPD.BLACK)
 
 t_bar_x: int = 25
 h_bar_x: int = column_width + 5
